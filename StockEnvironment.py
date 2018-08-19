@@ -114,7 +114,8 @@ class StockEnv(Environment):
             self.stock_amount = self.stock_amount - self.order_size  
         # elif action == 0: #'hold'
             # cash
-#             self.cash_hold = 0.9997 * self.cash_hold # 考虑货币的时间价值
+        # 考虑货币的时间价值, 更新现金总值
+        self.cash_hold = 0.9997 * self.cash_hold 
 
 
         # 更新state状态
@@ -141,17 +142,17 @@ class StockEnv(Environment):
         self.current_value = self.cash_hold + self.stock_value
         # 奖励规则
         # 以下情形给予最大惩罚，提前结束：
-        #       1. 现金数量 < 0; 2. 资本总值 < 8万; 3. 手头留存现金不足总资本的30% 4. 卖空操作时，没有足够的现金买回股票 
+        #       1. 现金数量 < 0; 2. 资本总值 < 7万; 3. 手头留存现金不足总资本的30% 4. 卖空操作时，没有足够的现金买回股票 
         if self.cash_hold <= 0 or self.current_value <= 70000. or (self.cash_hold <= (0.3 * self.current_value)): #or self.stock_amount < -20 
             self.reward = self.reward - 1.
             # self.done = True
-        if self.stock_amount < 0 and ((-1 * self.stock_amount) > (0.5 * self.cash_hold / self.states[-1,5])):
+        if self.stock_amount < 0 and ((-1 * self.stock_amount) > (0.7 * self.cash_hold / self.states[-1,5])):
             self.reward = self.reward - 1.
             # self.done = True
         # 若未提前结束或仍有下一个数据样本
-        if self.done == False:
+        # if self.done == False:
             # 继续按照如下规则更新奖励
-            self.reward = self.reward + 1. * (self.current_value - self.past_value) / self.past_value
+        self.reward = self.reward + 1. * (self.current_value - self.past_value) / self.past_value
             # self.reward = self.reward + 1. * self.step_counter / (self.sample_size - self.n_timesteps)
         
         # if self.done == False and self.step_counter > 0.5 * (self.sample_size - self.n_timesteps):

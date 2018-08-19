@@ -62,10 +62,10 @@ def main():
 	# 初始化runner
 	runner = Runner.Runner()
 	# 训练dqn网络，返回训练完毕的模型，以及训练最终结果; 显示训练情况图
-	trained_dqn = runner.trainer(env_train, 10)
+	trained_dqn = runner.trainer(env_train, 20)
 
 	# 用训练后的trained_Q对test数据进行分析，给出预测出的最终交易行为；显示测试情况图
-	act = runner.tester(env_test, trained_dqn, 1)
+	act = runner.tester(env_test, trained_dqn)
 	# 预测说明：
 	#          模型仅预测当天的交易行为，输入模型的数据为历史数据，
 	#		   但不是输入train数据集的数据，而是test数据集的数据
