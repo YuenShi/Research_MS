@@ -1,8 +1,11 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget, QPushButton, QLabel, QLineEdit, QGridLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QSizePolicy
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np
 
 class MainWindow(QWidget):
     
@@ -13,7 +16,7 @@ class MainWindow(QWidget):
         # 主窗口宽度
         self.width = 640
         # 主窗口高度
-        self.height = 480
+        self.height = 400
         # 初始化UI界面
         self.initUI()
 
@@ -48,8 +51,12 @@ class MainWindow(QWidget):
         epochsEdit = QLineEdit()
         # 开始训练
         start_button = QPushButton('Start Training')
+        start_button.resize(140,100)
         # 终止训练
-        stop_button = QPushButton('Stop Training')
+        # stop_button = QPushButton('Stop Training')
+
+        test_result = PlotCanvas(self, width=5, height=4)
+
 
         # 盒布局
         grid = QGridLayout()
@@ -65,7 +72,8 @@ class MainWindow(QWidget):
         grid.addWidget(epochsEdit, 3, 1)
 
         grid.addWidget(start_button, 4, 0)
-        grid.addWidget(stop_button, 4, 1)
+        # grid.addWidget(stop_button, 4, 1)
+        grid.addWidget(test_result, 5, 0, 5, 1)
 
         self.setLayout(grid) 
 
@@ -82,6 +90,34 @@ class MainWindow(QWidget):
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
+
+
+class PlotCanvas(FigureCanvas):
+ 
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+ 
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+ 
+        FigureCanvas.setSizePolicy(self,
+                QSizePolicy.Expanding,
+                QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+        self.plot()
+ 
+ 
+    def plot(self):
+        data = [np.random.random() for i in range(25)]
+        ax = self.figure.add_subplot(111)
+        ax.plot(data, 'r-')
+        ax.set_title('PyQt Matplotlib Example')
+        self.draw()
+
+
+
 
     
         
