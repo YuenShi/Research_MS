@@ -9,7 +9,7 @@ import numpy as np
 # 状态的步长
 N_TIMESTEPS = 20
 # 每次下单交易的股数
-ORDER_SIZE = 100
+ORDER_SIZE = 10
 
 class StockEnv(Environment):
     
@@ -145,24 +145,13 @@ class StockEnv(Environment):
         #       1. 现金数量 < 0; 2. 资本总值 < 7万; 3. 手头留存现金不足总资本的30% 4. 卖空操作时，没有足够的现金买回股票 
         if self.cash_hold <= 0 or self.current_value <= 70000. or (self.cash_hold <= (0.3 * self.current_value)): #or self.stock_amount < -20 
             self.reward = self.reward - 1.
-            # self.done = True
+
         if self.stock_amount < 0 and ((-1 * self.stock_amount) > (0.7 * self.cash_hold / self.states[-1,5])):
             self.reward = self.reward - 1.
-            # self.done = True
-        # 若未提前结束或仍有下一个数据样本
-        # if self.done == False:
-            # 继续按照如下规则更新奖励
+
+        # 常规的奖励惩罚
         self.reward = self.reward + 1. * (self.current_value - self.past_value) / self.past_value
             # self.reward = self.reward + 1. * self.step_counter / (self.sample_size - self.n_timesteps)
-        
-        # if self.done == False and self.step_counter > 0.5 * (self.sample_size - self.n_timesteps):
-        #     self.reward = self.reward + 1. * self.step_counter / (self.sample_size - self.n_timesteps)
-        # 提前结束的惩罚
-        # if self.done == False and self.step_counter <= 0.5 * (self.sample_size - self.n_timesteps):
-        #     self.reward = self.reward - 1. * (self.sample_size - self.n_timesteps - self.step_counter) / (self.sample_size - self.n_timesteps)
-        # 完成训练的奖励
-        # if self.done == True and (self.step_counter == (self.sample_size - self.n_timesteps)):
-        #     self.reward = self.reward + 1.
             
         # 更新学习次数
         self.step_counter = self.step_counter + 1
@@ -206,7 +195,7 @@ class StockEnv(Environment):
                 - num_actions: integer (required if type == 'int').
                 - min_value and max_value: float (optional if type == 'float', default: none).
         """
-        # 三种action: 0 - hold; 1 - buy; 2 - sell
+        # 三种情况: 0 - hold; 1 - buy; 2 - sell
         actions = [0, 1, 2] 
         
         return actions

@@ -3,7 +3,10 @@
 
 import StockEnvironment
 import DQN
-import Helper
+
+import numpy as np
+import tensorflow as tf
+from keras import backend as K
 from keras.models import load_model
 
 # 全局变量
@@ -14,17 +17,31 @@ GAMMA = 0.9
 # 贪心度
 EPSILON = 1.0
 
+# 贪心度最小值
+EPSILON_MIN = 0.01
+
+# 贪心度折扣率
+EPSILON_DECAY = 0.995
+
 
 
 class Runner:
     def __init__(self):
-
+        # 使用模型之前，添加这两行代码清空之前model占用的内存
+        K.clear_session()
+        tf.reset_default_graph()
         # 初始化奖励折扣率
         self.gamma = GAMMA
         # 初始化贪心度
         self.epsilon = EPSILON
+        self.epsilon_min = EPSILON_MIN  
+        self.epsilon_decay = EPSILON_DECAY  
+        # 标志位，用来表示是否训练出收益率较高的成功模型
+        self.train_success = False
+        # runner运行结束后，需要返回最终训练出的模型的名字，以便测试
+        self.model_name = ''
         
-    def trainer(self, env, epochs):
+    def trainer(self, symbol, env, epochs):
         # 获取环境
         self.env = env
         # 初始化dqn_agent
@@ -39,7 +56,7 @@ class Runner:
             # 初始化训练环境
             self.env.reset()
             # 获取当前状态
-            cur_state = self.env.states   #.reshape(-1)
+            cur_state = self.env.states
             # 初始化资本总值记录
             fortune = list()
             # 初始化持有现金
@@ -77,11 +94,20 @@ class Runner:
 
                 # 若为结束状态，跳出循环；否则继续训练
                 if done:
+                    # 训练出成功模型，保存前缀名为success的模型
+                    if fortune[-1] > 120000. and cash[-1] >= 0.:
+                        self.train_success = True
+                        self.model_name = "success-model-{}-{}.h5".format(symbol, epoch)
+                    # 训练未成功，保存前缀名未train的模型
+                    else:
+                        self.train_success = False
+                        self.model_name = "train-model-{}-{}.h5".format(symbol, epoch)
+                    self.dqn_agent.save_model(self.model_name)
                     break
                 
-            # 画出本轮次的资本总值变化图
-            print("Epoch " + str(epoch) + " : ")
-            Helper.plot_fortune(fortune)
+            # 输出训练的最终资本总值
+            print("Fortune for epoch " + str(epoch) + " : ")
+            print(fortune[-1])
             # 输出本轮次所有行为
             print("Actions for epoch " + str(epoch) + ":")
             print(act)
@@ -91,36 +117,26 @@ class Runner:
             # 输出本轮次所有现金
             print("Cash for epoch " + str(epoch) + ":")
             print(cash)
-        
-            # 若当前轮次的资本总值小于8万，存入失败模型
-            if fortune[-1] <= 80000. or cash[-1] < 0.:
-                print("Failed to complete in trial {}".format(epoch))
-                self.dqn_agent.save_model("fail-model-{}.h5".format(epoch))
-            # 若当前轮次的资本总值大于12万，存入成功模型
-            if fortune[-1] > 120000. and cash[-1] > 0.:
-                print("Success to complete in trial {}".format(epoch))
-                self.dqn_agent.save_model("success-model-{}.h5".format(epoch))
             
-        # 完成所有轮次训练后，返回训练后的dqn_agent       
-        return self.dqn_agent
+        # 完成所有轮次训练后，返回训练后的模型名称       
+        return self.model_name
                        
 
-    def tester(self, env, agent):
+    def tester(self, env, model_name):
         # 根据测试数据，初始化环境
         self.env = env
         # 初始化每轮次的训练步数
         self.epoch_len = self.env.sample_size - self.env.n_timesteps
-        # 初始化dqn_agent
-        self.dqn_agent = agent
-        # 用于存放最终预测结果
-        self.predict_act = 0
-
+        # # 初始化model_name
+        self.model_name = model_name
+        # 根据模型名称，载入模型
+        self.test_model = load_model(self.model_name)
 
 
         # 初始化测试环境
         self.env.reset()
         # 获取当前状态
-        cur_state = self.env.states   #.reshape(-1)
+        cur_state = self.env.states
         # 初始化资本总值记录
         fortune = list()
         # 初始化持有现金
@@ -131,8 +147,20 @@ class Runner:
         re = list()
         # 开始测试
         for step in range(self.epoch_len):
-            # 根据当前状态选择action
-            action = self.dqn_agent.act(cur_state)
+            # # 使用现有模型，根据当前状态选择action
+            # action = np.argmax(self.test_model.predict(cur_state)[0])
+            
+            # 更新贪心度值
+            self.epsilon *= self.epsilon_decay
+            # 在 epsilon 和 epsilon_min 之间，取两者中的较大者为最新的贪心度值
+            self.epsilon = max(self.epsilon_min, self.epsilon)
+            # 若随机数小于贪心度，进入探索模式，随机选取动作
+            if np.random.random() < self.epsilon:
+                action = np.random.randint(0, self.env.n_actions)
+            # 否则按照评估网络 test_model 预测动作
+            else:
+                action = np.argmax(self.test_model.predict(cur_state)[0])
+
             # 执行action，返回环境中的下一个状态
             new_state, done, reward = self.env.execute(action)
             
@@ -143,7 +171,7 @@ class Runner:
             # 记录当前持有的现金，添加到cash记录表
             cash.append(new_state[-1,6])                
             # 计算当前状态的资本总值，添加到fortune记录表
-            _fortune = new_state[-1,6] +  new_state[-1,7]
+            _fortune = new_state[-1,6] + new_state[-1,7]
             fortune.append(_fortune)
 
             # 获取下一个状态
@@ -153,9 +181,10 @@ class Runner:
             if done:
                 break
                 
-        # 画出测试的资本总值变化图
+        # 输出测试的最终资本总值
         print("Test Fortune :")
-        Helper.plot_fortune(fortune)
+        print(fortune[-1])
+        # Helper.plot_fortune(fortune)
         # 输出测试的所有行为
         print("Test Actions :")
         print(act)
@@ -166,12 +195,7 @@ class Runner:
         print("Test Cash :")
         print(cash)
 
-
-        self.predict_act = act[-1]
-        print("Predict Cuurrent Action :")
-        print(self.predict_act)
-
-        return self.predict_act
-
+        # 返回结果，用于画图
+        return fortune, act, re, cash
 
                 

@@ -1,11 +1,10 @@
 import numpy as np
 import random
+from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
-from keras.layers.recurrent import LSTM
-from keras.optimizers import RMSprop, Adam
+from keras.optimizers import Adam
 
-from collections import deque
 
 
 # 全局变量
@@ -35,7 +34,7 @@ TAU = 0.05
 class DQN:
     def __init__(self, env):
         # 传入训练环境env
-        self.env     = env
+        self.env = env
 
         # 初始化参数
         self.memory  = deque(maxlen=2000)  # 记忆队列，最大记忆量为2000
