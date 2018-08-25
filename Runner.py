@@ -95,28 +95,30 @@ class Runner:
                 # 若为结束状态，跳出循环；否则继续训练
                 if done:
                     # 训练出成功模型，保存前缀名为success的模型
-                    if fortune[-1] > 120000. and cash[-1] >= 0.:
+                    if fortune[-1] >= 120000. and cash[-1] >= 0.:
                         self.train_success = True
                         self.model_name = "success-model-{}-{}.h5".format(symbol, epoch)
-                    # 训练未成功，保存前缀名未train的模型
+                        self.dqn_agent.save_model(self.model_name)
+                    # 训练未成功，保存前缀名为train的模型
                     else:
                         self.train_success = False
                         self.model_name = "train-model-{}-{}.h5".format(symbol, epoch)
-                    self.dqn_agent.save_model(self.model_name)
+                        self.dqn_agent.save_model(self.model_name)
                     break
-                
-            # 输出训练的最终资本总值
-            print("Fortune for epoch " + str(epoch) + " : ")
-            print(fortune[-1])
-            # 输出本轮次所有行为
-            print("Actions for epoch " + str(epoch) + ":")
-            print(act)
-            # 输出本轮次所有奖励
-            print("Rewards for epoch "+ str(epoch) + ":")
-            print(re)
-            # 输出本轮次所有现金
-            print("Cash for epoch " + str(epoch) + ":")
-            print(cash)
+            
+            print("Epoch {}: Fortune-{}, Cash-{}, Reward-{}".format(str(epoch), fortune[-1], cash[-1], re[-1]))    
+            # # 输出训练的最终资本总值
+            # print("Fortune for epoch " + str(epoch) + " : ")
+            # print(fortune[-1])
+            # # 输出本轮次所有行为
+            # print("Actions for epoch " + str(epoch) + ":")
+            # print(act)
+            # # 输出本轮次所有奖励
+            # print("Rewards for epoch "+ str(epoch) + ":")
+            # print(re)
+            # # 输出本轮次所有现金
+            # print("Cash for epoch " + str(epoch) + ":")
+            # print(cash)
             
         # 完成所有轮次训练后，返回训练后的模型名称       
         return self.model_name
@@ -180,20 +182,20 @@ class Runner:
             # 若为结束状态，跳出循环；否则继续训练            
             if done:
                 break
-                
-        # 输出测试的最终资本总值
-        print("Test Fortune :")
-        print(fortune[-1])
-        # Helper.plot_fortune(fortune)
-        # 输出测试的所有行为
-        print("Test Actions :")
-        print(act)
-        # 输出测试的所有奖励
-        print("Test Rewards :")
-        print(re)
-        # 输出测试的所有现金
-        print("Test Cash :")
-        print(cash)
+        
+        print("Test Result: Fortune-{}, Cash-{}, Reward-{}".format(fortune[-1], cash[-1], re[-1]))          
+        # # 输出测试的最终资本总值
+        # print("Test Fortune :")
+        # print(fortune[-1])
+        # # 输出测试的所有行为
+        # print("Test Actions :")
+        # print(act)
+        # # 输出测试的所有奖励
+        # print("Test Rewards :")
+        # print(re)
+        # # 输出测试的所有现金
+        # print("Test Cash :")
+        # print(cash)
 
         # 返回结果，用于画图
         return fortune, act, re, cash

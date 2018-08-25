@@ -7,7 +7,7 @@ import numpy as np
 
 # 全局变量
 # 状态的步长
-N_TIMESTEPS = 20
+N_TIMESTEPS = 5
 # 每次下单交易的股数
 ORDER_SIZE = 10
 

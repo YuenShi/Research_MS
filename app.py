@@ -251,7 +251,7 @@ class PlotCanvas(FigureCanvas):
  
     def plot_trade_point(self, data, act_list):
         # 载入数据 data，从中获取 Close Price
-        self.close_price = data[20:,3]
+        self.close_price = data[5:,3]
         # 载入数据 act_list，从中获取 Act
         self.act = act_list
         # 新增画布

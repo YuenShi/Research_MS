@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import quandl  # 用quandl的api获取stock price 以苹果公司股票进行实验 代码-APPL
 
-API_KEY = USE YOUR OWN API KEY # 使用代码者需替换为自己的api_key
+API_KEY = "gG8vr-_3fVigtYzrQf5B" # 使用代码者需替换为自己的api_key
 quandl.ApiConfig.api_key = API_KEY
 
 
